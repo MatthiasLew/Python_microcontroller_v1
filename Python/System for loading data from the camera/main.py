@@ -13,7 +13,7 @@ if not cap.isOpened():
     exit()
 
 prev_frame = None  # Store the previous frame for motion detection
-motion_detection_value = 4000  # Threshold for detecting movement
+motion_detection_value = 10000  # Threshold for detecting movement
 
 # Counters for smile detection stabilization
 smile_counter = 0
@@ -64,7 +64,7 @@ while True:
     else:
         detection_info["face_detected"] = True
         for (x, y, w, h) in faces:
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 5)  # Draw rectangle around face
+            cv2.rectangle(gray, (x, y), (x + w, y + h), (255, 0, 0), 5)  # Draw rectangle around face
             roi_gray = gray[y:y + h, x:x + w]  # Region of interest (ROI) for smile detection
 
             # Smile detection within the detected face
@@ -100,7 +100,7 @@ while True:
         non_zero_count = cv2.countNonZero(thresh_img)  # Count the number of changed pixels
 
         # Display motion value on frame
-        cv2.putText(frame, f"Motion: {non_zero_count}", (10, 450),
+        cv2.putText(gray, f"Motion: {non_zero_count}", (10, 450),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
         # Detect movement based on threshold
