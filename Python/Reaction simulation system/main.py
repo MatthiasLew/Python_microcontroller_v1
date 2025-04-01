@@ -38,7 +38,7 @@ import time
 # Calculate absolute path for the controller response JSON file
 # This ensures that the file is correctly found regardless of the working directory.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-controller_response_file = os.path.join(BASE_DIR, "controller_response.json")
+controller_response_file = os.path.join(os.getcwd(), "controller_response.json")
 
 
 # -------------------------------------------------------------------------

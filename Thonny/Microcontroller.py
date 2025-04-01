@@ -36,8 +36,8 @@ import time
 import os
 
 # Absolute paths for JSON files (adjust the file names if necessary)
-detection_file = r"..\Python\System for loading data from the camera\detection_data.json"
-response_file = r"..\Python\Reaction simulation system\controller_response.json"
+detection_file = os.path.join(r"C:\fork\Python_microcontroller_v1\Python\System for loading data from the camera", "detection_data.json")
+response_file = os.path.join(r"C:\fork\Python_microcontroller_v1\Python\Reaction simulation system", "controller_response.json")
 
 def read_detection_data(filename):
     """
