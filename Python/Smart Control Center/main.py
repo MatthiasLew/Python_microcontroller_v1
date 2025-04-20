@@ -1,81 +1,60 @@
+import face_recognition
+import cv2
 import subprocess
 import os
-import time
-import keyboard
 
-# Paths to the scripts
-face_detection_script = r"C:\fork\Python_microcontroller_v1\Python\System for loading data from the camera\main.py"
-microcontroller_script = r"C:\fork\Python_microcontroller_v1\Thonny\Microcontroller.py"
-simulation_script = r"C:\fork\Python_microcontroller_v1\Python\Reaction simulation system\main.py"
+# Zakładamy, że Smart Control Center jest w katalogu Python/Smart Control Center/main.py
+BASE_DIR = os.path.dirname(__file__)
+SMART_CENTER = os.path.join(BASE_DIR, 'Python', 'Smart Control Center', 'main.py')
 
-# Path to the Python interpreter (within a virtual environment)
-python_interpreter = r"C:\fork\Python_microcontroller_v1\Python\Smart Control Center\venv\Scripts\python.exe"
+# Wbudowana kamera USB (numer 0)
+video_capture = cv2.VideoCapture(0)
 
-# Error log file path
-log_file = "error_log.txt"
+print("🎥 Starting the camera... Press 'q' to exit.")
+face_recognized = False
 
+# Wczytanie wzorca twarzy (z pliku known_face.jpg w folderze z tym skryptem)
+known_image = face_recognition.load_image_file(os.path.join(BASE_DIR, 'known_face.jpg'))
+known_encoding = face_recognition.face_encodings(known_image)[0]
 
-def wait_for_file(filepath, timeout=5):
-    """
-    Waits for a file to appear in the filesystem within a specified timeout period.
+while True:
+    ret, frame = video_capture.read()
+    if not ret:
+        print("❌ Failed to read from the camera.")
+        break
 
-    Parameters:
-        filepath (str): The full path of the file to monitor.
-        timeout (int, optional): Maximum time in seconds to wait for the file. Defaults to 5 seconds.
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    face_locations = face_recognition.face_locations(rgb_frame, model='hog')
 
-    Returns:
-        bool: True if the file is detected within the timeout; otherwise, False.
+    if face_locations and not face_recognized:
+        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+        for face_encoding in face_encodings:
+            matches = face_recognition.compare_faces([known_encoding], face_encoding)
+            if True in matches:
+                print("✔️ User recognized! Launching Smart Control Center...")
+                video_capture.release()
+                cv2.destroyAllWindows()
 
-    If the file is not detected within the timeout, an error message is logged to the error log file.
-    """
-    start_time = time.time()
-    while not os.path.exists(filepath):
-        # Check if the waiting time has exceeded the timeout limit.
-        if time.time() - start_time > timeout:
-            with open(log_file, "a") as log:
-                log.write(f"ERROR: File {filepath} did not appear within {timeout} seconds!\n")
-            return False
-        time.sleep(0.1)  # Check every 100 milliseconds.
-    return True
+                # Uruchomienie Smart Control Center
+                proc = subprocess.Popen([
+                    'python3', SMART_CENTER
+                ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                out, err = proc.communicate()
+                if proc.returncode != 0:
+                    print(f"❌ Error: {err.decode()}")
+                else:
+                    print(f"✔️ Started: {out.decode()}")
 
+                face_recognized = True
+                break
+            else:
+                print("❌ Unknown face!")
+    else:
+        print("😶 No face detected")
 
-# Launch the scripts in their respective directories using the specified Python interpreter.
-# The 'cwd' parameter sets the current working directory for each process.
-# Errors (stderr) are redirected to the log file for later analysis.
+    cv2.imshow('Face ID - Press q to exit', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-face_proc = subprocess.Popen(
-    [python_interpreter, face_detection_script],
-    cwd=os.path.dirname(face_detection_script),
-    stderr=open(log_file, "a")
-)
-
-micro_proc = subprocess.Popen(
-    [python_interpreter, microcontroller_script],
-    cwd=os.path.dirname(microcontroller_script),
-    stderr=open(log_file, "a")
-)
-
-sim_proc = subprocess.Popen(
-    [python_interpreter, simulation_script],
-    cwd=os.path.dirname(simulation_script),
-    stderr=open(log_file, "a")
-)
-
-print("Processes started. Press 'q' to terminate all processes.")
-
-# Main loop to monitor for the 'q' key press.
-# When 'q' is pressed, termination signals are sent to all subprocesses.
-try:
-    while True:
-        if keyboard.is_pressed("q"):
-            print("\nTerminating all processes...")
-            face_proc.terminate()
-            micro_proc.terminate()
-            sim_proc.terminate()
-            break
-        time.sleep(0.1)  # Sleep to minimize CPU usage during the loop.
-except KeyboardInterrupt:
-    # If the user interrupts the script (e.g., with Ctrl+C), the exception is caught and the script exits gracefully.
-    pass
-
-print("Processes terminated.")
+video_capture.release()
+cv2.destroyAllWindows()
