@@ -5,27 +5,32 @@ import os
 import time
 import keyboard
 
-# Ścieżki do skryptów uruchamianych po Face ID
+# === Configuration ===
+
 BASE_DIR = os.path.dirname(__file__)
 known_image_path = os.path.join(BASE_DIR, 'known_face.jpg')
-detection_script = os.path.abspath(os.path.join(BASE_DIR, '..', 'Python', 'System for loading data from the camera', 'main.py')
-)
-reaction_script = os.path.abspath(
-    os.path.join(BASE_DIR, '..', 'Python', 'Reaction simulation system', 'main.py')
-)
 
-# Wczytanie wzorca twarzy
-print("🔍 Ładowanie wzorca twarzy...")
+# Paths to scripts that will be launched upon successful face recognition
+detection_script = os.path.abspath(os.path.join(
+    BASE_DIR, '..', 'Python', 'System for loading data from the camera', 'main.py'))
+reaction_script = os.path.abspath(os.path.join(
+    BASE_DIR, '..', 'Python', 'Reaction simulation system', 'main.py'))
+
+# === Load known face encoding ===
+
+print("🔍 Loading known face image...")
 known_image = face_recognition.load_image_file(known_image_path)
 known_encoding = face_recognition.face_encodings(known_image)[0]
 
-# Inicjalizacja kamery USB
+# === Initialize camera ===
+
 video_capture = cv2.VideoCapture(0)
-print("🎥 Rozpoczynam Face ID na mikrokontrolerze... Naciśnij 'q' aby wyjść.")
+print("🎥 Face ID active. Press 'q' to quit.")
 
 face_recognized = False
 
-# Pętla rozpoznawania
+# === Face recognition loop ===
+
 while True:
     ret, frame = video_capture.read()
     if not ret:
@@ -38,34 +43,40 @@ while True:
     for face_encoding in face_encodings:
         matches = face_recognition.compare_faces([known_encoding], face_encoding)
         if True in matches:
-            print("✔️ Twarz rozpoznana! Uruchamiam systemy...")
+            print("✔️ Face recognized! Launching systems...")
             face_recognized = True
             break
+
     if face_recognized:
         break
 
-    cv2.imshow('Face ID - mikrokontroler', frame)
+    cv2.imshow('Face ID - Microcontroller', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 video_capture.release()
 cv2.destroyAllWindows()
 
-# Jeśli rozpoznano, uruchamiamy pozostałe skrypty
+# === Launch reaction and detection systems if face was recognized ===
+
 if face_recognized:
     procs = []
     for script in (detection_script, reaction_script):
         p = subprocess.Popen(['python3', script], cwd=os.path.dirname(script))
         procs.append(p)
-    print("▶️ Skrypty uruchomione. Naciśnij 'q' aby zatrzymać.")
+
+    print("▶️ Scripts launched. Press 'q' to terminate.")
+
     try:
         while True:
             if keyboard.is_pressed('q'):
-                print("❌ Zatrzymuję wszystkie skrypty...")
+                print("❌ Terminating all scripts...")
                 for p in procs:
                     p.terminate()
                 break
             time.sleep(0.1)
     except KeyboardInterrupt:
-        passq
-    print("✅ Wszystkie skrypty zatrzymane.")
+        for p in procs:
+            p.terminate()
+
+    print("✅ All scripts terminated.")

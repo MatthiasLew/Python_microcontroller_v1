@@ -2,73 +2,99 @@ import json
 import time
 import pygame
 import os
+import math
 
-DATA_PATH = os.path.join(os.path.dirname(__file__),
-                         r"C:\fork\Python_microcontroller_v1\Python\System for loading data from the "
-                         r"camera\detection_data.json")
+# Angle used to animate waving motion
+wave_angle = 0
 
+# Absolute path to the JSON file containing detection data
+DATA_PATH = os.path.join(
+    os.path.dirname(__file__),
+    r"C:\fork\Python_microcontroller_v1\Python\System for loading data from the camera\detection_data.json"
+)
+
+# Initialize Pygame and screen settings
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
-pygame.display.set_caption("Symulacja mikrokontrolera")
+pygame.display.set_caption("Microcontroller Simulation")
 
+# Font and color definitions
 font = pygame.font.SysFont(None, 36)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 
+# Detection state flags (updated from detection_data.json)
 face_detected = False
 smile_detected = False
 movement_detected = False
 
+# Load sound effect (optional)
 if os.path.exists("beep.wav"):
     sound = pygame.mixer.Sound("beep.wav")
 else:
     sound = None
 
 
-# Funkcja do rysowania postaci
 def draw_character():
-    # Rysowanie twarzy
-    pygame.draw.circle(screen, (255, 224, 189), (400, 200), 50)  # Głowa
+    """
+    Draws the main character on the screen using basic shapes.
+    Reactions depend on current detection status (smile/movement).
+    """
+    # Head
+    pygame.draw.circle(screen, (255, 224, 189), (400, 200), 50)
 
-    # Oczy
-    pygame.draw.circle(screen, (0, 0, 0), (375, 180), 10)  # Lewe oko
-    pygame.draw.circle(screen, (0, 0, 0), (425, 180), 10)  # Prawe oko
+    # Eyes
+    pygame.draw.circle(screen, (0, 0, 0), (375, 180), 10)
+    pygame.draw.circle(screen, (0, 0, 0), (425, 180), 10)
 
-    # Usta (zmiana zależnie od wykrytego uśmiechu)
+    # Mouth
     if smile_detected:
         pygame.draw.arc(screen, (255, 0, 0), (375, 210, 50, 30), 3.14, 0, 5)
     else:
         pygame.draw.line(screen, (255, 0, 0), (375, 235), (425, 235), 5)
 
-    # Ciało
+    # Torso
     pygame.draw.line(screen, (0, 0, 0), (400, 250), (400, 400), 5)
 
-    # Ręce (ruszają się w zależności od wykrytego ruchu)
-    if movement_detected:
-        pygame.draw.line(screen, (0, 0, 0), (400, 300), (350, 350), 5)  # Lewa ręka
-        pygame.draw.line(screen, (0, 0, 0), (400, 300), (450, 350), 5)  # Prawa ręka
-    else:
-        pygame.draw.line(screen, (0, 0, 0), (400, 300), (350, 330), 5)  # Lewa ręka
-        pygame.draw.line(screen, (0, 0, 0), (400, 300), (450, 330), 5)  # Prawa ręka
+    # Left arm (static)
+    pygame.draw.line(screen, (0, 0, 0), (400, 300), (350, 330), 5)
 
-    # Nogi
-    pygame.draw.line(screen, (0, 0, 0), (400, 400), (375, 500), 5)  # Lewa noga
-    pygame.draw.line(screen, (0, 0, 0), (400, 400), (425, 500), 5)  # Prawa noga
+    # Right arm (animated waving when movement is detected)
+    if movement_detected:
+        wave_length = 20
+        offset = int(math.sin(math.radians(wave_angle)) * wave_length)
+        pygame.draw.line(screen, (0, 0, 0), (400, 300), (450, 300 + offset), 5)
+    else:
+        pygame.draw.line(screen, (0, 0, 0), (400, 300), (450, 330), 5)
+
+    # Legs
+    pygame.draw.line(screen, (0, 0, 0), (400, 400), (375, 500), 5)
+    pygame.draw.line(screen, (0, 0, 0), (400, 400), (425, 500), 5)
 
 
 def draw_status():
-    screen.fill(WHITE)
+    """
+    Displays current detection status on the screen (face, smile, movement).
+    Color-coded for clarity: green = true, red = false.
+    """
     face_text = font.render(f"Face: {'true' if face_detected else 'false'}", True, BLACK)
-    smile_text = font.render(f"Smile: {'true' if smile_detected else 'false'}", True, GREEN if smile_detected else RED)
-    move_text = font.render(f"Movement: {'true' if movement_detected else 'false'}", True,
-                            GREEN if movement_detected else RED)
+    smile_text = font.render(
+        f"Smile: {'true' if smile_detected else 'false'}", True,
+        GREEN if smile_detected else RED
+    )
+    move_text = font.render(
+        f"Movement: {'true' if movement_detected else 'false'}", True,
+        GREEN if movement_detected else RED
+    )
+
     screen.blit(face_text, (50, 100))
     screen.blit(smile_text, (50, 200))
     screen.blit(move_text, (50, 300))
-    pygame.display.flip()
 
+
+# === Main application loop ===
 
 running = True
 last_check_time = 0
@@ -79,6 +105,8 @@ while running:
             running = False
 
     current_time = time.time()
+
+    # Check for new detection data every 0.5 seconds
     if current_time - last_check_time >= 0.5:
         try:
             with open(DATA_PATH) as f:
@@ -89,14 +117,21 @@ while running:
 
                 if smile_detected and sound:
                     sound.play()
-
         except Exception as e:
-            print("Błąd wczytywania danych:", e)
+            print("Error reading detection data:", e)
 
         last_check_time = current_time
 
+    screen.fill(WHITE)
+    draw_character()
     draw_status()
-    draw_character()  # Rysowanie postaci
+
+    if movement_detected:
+        wave_angle = (wave_angle + 10) % 360
+    else:
+        wave_angle = 0
+
+    pygame.display.flip()
     pygame.time.delay(100)
 
 pygame.quit()
