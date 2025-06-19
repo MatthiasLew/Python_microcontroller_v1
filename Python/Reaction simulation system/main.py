@@ -3,7 +3,9 @@ import time
 import pygame
 import os
 
-DATA_PATH = os.path.join(os.path.dirname(__file__), r"C:\fork\Python_microcontroller_v1\Python\System for loading data from the camera\detection_data.json")
+DATA_PATH = os.path.join(os.path.dirname(__file__),
+                         r"C:\fork\Python_microcontroller_v1\Python\System for loading data from the "
+                         r"camera\detection_data.json")
 
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
@@ -23,6 +25,7 @@ if os.path.exists("beep.wav"):
     sound = pygame.mixer.Sound("beep.wav")
 else:
     sound = None
+
 
 # Funkcja do rysowania postaci
 def draw_character():
@@ -54,6 +57,7 @@ def draw_character():
     pygame.draw.line(screen, (0, 0, 0), (400, 400), (375, 500), 5)  # Lewa noga
     pygame.draw.line(screen, (0, 0, 0), (400, 400), (425, 500), 5)  # Prawa noga
 
+
 def draw_status():
     screen.fill(WHITE)
     face_text = font.render(f"Face: {'true' if face_detected else 'false'}", True, BLACK)
@@ -64,6 +68,7 @@ def draw_status():
     screen.blit(smile_text, (50, 200))
     screen.blit(move_text, (50, 300))
     pygame.display.flip()
+
 
 running = True
 last_check_time = 0
