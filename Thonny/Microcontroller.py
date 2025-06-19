@@ -8,8 +8,7 @@ import keyboard
 # Ścieżki do skryptów uruchamianych po Face ID
 BASE_DIR = os.path.dirname(__file__)
 known_image_path = os.path.join(BASE_DIR, 'known_face.jpg')
-detection_script = os.path.abspath(
-    os.path.join(BASE_DIR, '..', 'Python', 'System for loading data from the camera', 'main.py')
+detection_script = os.path.abspath(os.path.join(BASE_DIR, '..', 'Python', 'System for loading data from the camera', 'main.py')
 )
 reaction_script = os.path.abspath(
     os.path.join(BASE_DIR, '..', 'Python', 'Reaction simulation system', 'main.py')
